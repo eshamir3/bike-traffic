@@ -141,14 +141,17 @@ map.on('load', async () => {
   // Initialize stations with traffic data
   stations = computeStationTraffic(stations);
 
+  // Compute max total traffic across all stations (unfiltered)
+  const maxTotalTraffic = d3.max(stations, d => d.totalTraffic) || 1;
+  radiusScale.domain([0, maxTotalTraffic]);
+
   // Create SVG overlay
   const svg = d3.select('#map').select('svg');
 
   // Function to update circle positions and sizes
   function updateScatterPlot(timeFilter) {
     const filteredStations = computeStationTraffic(stations, timeFilter);
-    // Update radius scale domain based on filtered data
-    radiusScale.domain([0, d3.max(filteredStations, d => d.totalTraffic) || 1]);
+    // Do NOT update radiusScale.domain here!
 
     // D3 join pattern for circles
     const circles = svg
@@ -162,7 +165,6 @@ map.on('load', async () => {
       .attr('opacity', 0.8)
       .style('--departure-ratio', d => stationFlow(d.departures / d.totalTraffic))
       .each(function (d) {
-        // Remove old title if exists
         d3.select(this).select('title').remove();
         d3.select(this)
           .append('title')
