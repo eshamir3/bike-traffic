@@ -158,18 +158,22 @@ map.on('load', async () => {
       .selectAll('circle')
       .data(filteredStations, d => d.short_name)
       .join('circle')
-      .attr('r', d => radiusScale(d.totalTraffic))
+      .attr('r', d => radiusScale(d.totalTraffic || 0))
       .attr('fill', 'none') // fill is set by CSS
       .attr('stroke', 'white')
       .attr('stroke-width', 1)
       .attr('opacity', 0.8)
-      .style('--departure-ratio', d => stationFlow(d.departures / d.totalTraffic))
+      .style('--departure-ratio', d =>
+        d.totalTraffic > 0 ? stationFlow(d.departures / d.totalTraffic) : 0.5
+      )
       .each(function (d) {
         d3.select(this).select('title').remove();
         d3.select(this)
           .append('title')
           .text(
-            `${d.totalTraffic} trips (${d.departures} departures, ${d.arrivals} arrivals)`
+            d.totalTraffic > 0
+              ? `${d.totalTraffic} trips (${d.departures} departures, ${d.arrivals} arrivals)`
+              : 'No data'
           );
       });
 
