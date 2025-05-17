@@ -81,6 +81,15 @@ const stationFlow = d3.scaleQuantize().domain([0, 1]).range([0, 0.5, 1]);
 // Initialize radius scale (domain will be set dynamically)
 const radiusScale = d3.scaleSqrt().range([2, 18]);
 
+// Debounce utility
+function debounce(func, wait) {
+  let timeout;
+  return function(...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+
 // Wait for map to load before adding data
 map.on('load', async () => {
   // Add Boston bike lanes
@@ -170,7 +179,12 @@ map.on('load', async () => {
     } else {
       radiusScale.range([6, 32]); // Filtering: make circles more visible
     }
-    // D3 join pattern for circles
+    // Guard: if no data, remove all circles
+    if (filteredStations.length === 0) {
+      svg.selectAll('circle').remove();
+      circles = svg.selectAll('circle');
+      return;
+    }
     circles = svg
       .selectAll('circle')
       .data(filteredStations, d => d.short_name)
@@ -179,7 +193,7 @@ map.on('load', async () => {
       .attr('fill', 'none')
       .attr('stroke', 'white')
       .attr('stroke-width', 1)
-      .attr('opacity', 0.8)
+      .attr('opacity', 1) // darker/more visible
       .style('--departure-ratio', d =>
         d.totalTraffic > 0 ? stationFlow(d.departures / d.totalTraffic) : 0.5
       )
@@ -203,6 +217,7 @@ map.on('load', async () => {
 
   function updateTimeDisplay() {
     timeFilter = Number(timeSlider.value);
+    console.log('Slider value:', timeFilter);
     if (timeFilter === -1) {
       selectedTime.textContent = '';
       anyTimeLabel.style.display = 'block';
@@ -213,6 +228,6 @@ map.on('load', async () => {
     updateScatterPlot(timeFilter);
   }
 
-  timeSlider.addEventListener('input', updateTimeDisplay);
+  timeSlider.addEventListener('input', debounce(updateTimeDisplay, 80));
   updateTimeDisplay();
 }); 
