@@ -228,6 +228,6 @@ map.on('load', async () => {
     updateScatterPlot(timeFilter);
   }
 
-  timeSlider.addEventListener('input', debounce(updateTimeDisplay, 80));
+  timeSlider.addEventListener('input', updateTimeDisplay);
   updateTimeDisplay();
 }); 
