@@ -140,26 +140,43 @@ map.on('load', async () => {
 
   // Initialize stations with traffic data
   stations = computeStationTraffic(stations);
-
-  // Compute max total traffic across all stations (unfiltered)
   const maxTotalTraffic = d3.max(stations, d => d.totalTraffic) || 1;
-  radiusScale.domain([0, maxTotalTraffic]);
 
   // Create SVG overlay
   const svg = d3.select('#map').select('svg');
+  let circles = svg.selectAll('circle');
 
-  // Function to update circle positions and sizes
+  // Function to update circle positions
+  function updatePositions() {
+    circles
+      .attr('cx', d => getCoords(d).cx)
+      .attr('cy', d => getCoords(d).cy);
+  }
+
+  // Attach event listeners only once
+  map.on('move', updatePositions);
+  map.on('zoom', updatePositions);
+  map.on('resize', updatePositions);
+  map.on('moveend', updatePositions);
+
+  // Function to update scatterplot based on time filter
   function updateScatterPlot(timeFilter) {
     const filteredStations = computeStationTraffic(stations, timeFilter);
-    // Do NOT update radiusScale.domain here!
-
+    // Set radius scale domain to max of all stations
+    radiusScale.domain([0, maxTotalTraffic]);
+    // Dynamically adjust range for filter state
+    if (timeFilter === -1) {
+      radiusScale.range([3, 18]); // Default: visible but not huge
+    } else {
+      radiusScale.range([6, 32]); // Filtering: make circles more visible
+    }
     // D3 join pattern for circles
-    const circles = svg
+    circles = svg
       .selectAll('circle')
       .data(filteredStations, d => d.short_name)
       .join('circle')
       .attr('r', d => radiusScale(d.totalTraffic || 0))
-      .attr('fill', 'none') // fill is set by CSS
+      .attr('fill', 'none')
       .attr('stroke', 'white')
       .attr('stroke-width', 1)
       .attr('opacity', 0.8)
@@ -176,18 +193,7 @@ map.on('load', async () => {
               : 'No data'
           );
       });
-
-    // Update positions
-    function updatePositions() {
-      circles
-        .attr('cx', d => getCoords(d).cx)
-        .attr('cy', d => getCoords(d).cy);
-    }
     updatePositions();
-    map.on('move', updatePositions);
-    map.on('zoom', updatePositions);
-    map.on('resize', updatePositions);
-    map.on('moveend', updatePositions);
   }
 
   // Set up time slider
