@@ -1,0 +1,83 @@
+body {
+  font: 100%/1.5 system-ui, sans-serif;
+  display: flex;
+  flex-flow: column;
+  max-width: 80em;
+  min-height: 100vh;
+  box-sizing: border-box;
+  margin: auto;
+  padding: 1em;
+  background: #fafbfc;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2em;
+  margin-bottom: 1.5em;
+}
+
+h1 {
+  font-size: 2em;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin: 0;
+}
+
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  min-width: 350px;
+}
+
+.filter-controls label {
+  font-size: 1em;
+  margin-right: 0.5em;
+}
+
+#time-slider {
+  flex: 1 1 200px;
+  min-width: 150px;
+  max-width: 300px;
+  accent-color: #1976d2;
+  margin: 0 0.5em;
+}
+
+.filter-controls time {
+  min-width: 60px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 1em;
+}
+
+.filter-controls em {
+  color: #666;
+  font-style: italic;
+  font-size: 0.95em;
+  margin-left: 0.5em;
+}
+
+#map {
+  margin-bottom: 1.5em;
+}
+
+header label {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+header time,
+header em {
+  display: block;
+}
+
+header em {
+  color: #666;
+  font-style: italic;
+} 
