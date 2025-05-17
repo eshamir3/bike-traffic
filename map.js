@@ -78,8 +78,8 @@ function computeStationTraffic(stations, timeFilter = -1) {
 // Create quantize scale for traffic flow visualization
 const stationFlow = d3.scaleQuantize().domain([0, 1]).range([0, 0.5, 1]);
 
-// Initialize radius scale
-const radiusScale = d3.scaleSqrt().domain([0, 1]).range([0, 25]);
+// Initialize radius scale (domain will be set dynamically)
+const radiusScale = d3.scaleSqrt().range([2, 18]);
 
 // Wait for map to load before adding data
 map.on('load', async () => {
@@ -144,50 +144,44 @@ map.on('load', async () => {
   // Create SVG overlay
   const svg = d3.select('#map').select('svg');
 
-  // Create circles for stations
-  const circles = svg
-    .selectAll('circle')
-    .data(stations, (d) => d.short_name)
-    .enter()
-    .append('circle')
-    .attr('r', (d) => radiusScale(d.totalTraffic))
-    .style('--departure-ratio', (d) => stationFlow(d.departures / d.totalTraffic))
-    .each(function (d) {
-      d3.select(this)
-        .append('title')
-        .text(
-          `${d.totalTraffic} trips (${d.departures} departures, ${d.arrivals} arrivals)`
-        );
-    });
-
-  // Function to update circle positions
-  function updatePositions() {
-    circles
-      .attr('cx', (d) => getCoords(d).cx)
-      .attr('cy', (d) => getCoords(d).cy);
-  }
-
-  // Initial position update
-  updatePositions();
-
-  // Update positions on map interactions
-  map.on('move', updatePositions);
-  map.on('zoom', updatePositions);
-  map.on('resize', updatePositions);
-  map.on('moveend', updatePositions);
-
-  // Function to update scatterplot based on time filter
+  // Function to update circle positions and sizes
   function updateScatterPlot(timeFilter) {
     const filteredStations = computeStationTraffic(stations, timeFilter);
-    
-    // Update radius scale range based on filtering
-    timeFilter === -1 ? radiusScale.range([0, 25]) : radiusScale.range([3, 50]);
-    
-    circles
-      .data(filteredStations, (d) => d.short_name)
+    // Update radius scale domain based on filtered data
+    radiusScale.domain([0, d3.max(filteredStations, d => d.totalTraffic) || 1]);
+
+    // D3 join pattern for circles
+    const circles = svg
+      .selectAll('circle')
+      .data(filteredStations, d => d.short_name)
       .join('circle')
-      .attr('r', (d) => radiusScale(d.totalTraffic))
-      .style('--departure-ratio', (d) => stationFlow(d.departures / d.totalTraffic));
+      .attr('r', d => radiusScale(d.totalTraffic))
+      .attr('fill', 'none') // fill is set by CSS
+      .attr('stroke', 'white')
+      .attr('stroke-width', 1)
+      .attr('opacity', 0.8)
+      .style('--departure-ratio', d => stationFlow(d.departures / d.totalTraffic))
+      .each(function (d) {
+        // Remove old title if exists
+        d3.select(this).select('title').remove();
+        d3.select(this)
+          .append('title')
+          .text(
+            `${d.totalTraffic} trips (${d.departures} departures, ${d.arrivals} arrivals)`
+          );
+      });
+
+    // Update positions
+    function updatePositions() {
+      circles
+        .attr('cx', d => getCoords(d).cx)
+        .attr('cy', d => getCoords(d).cy);
+    }
+    updatePositions();
+    map.on('move', updatePositions);
+    map.on('zoom', updatePositions);
+    map.on('resize', updatePositions);
+    map.on('moveend', updatePositions);
   }
 
   // Set up time slider
@@ -197,7 +191,6 @@ map.on('load', async () => {
 
   function updateTimeDisplay() {
     timeFilter = Number(timeSlider.value);
-
     if (timeFilter === -1) {
       selectedTime.textContent = '';
       anyTimeLabel.style.display = 'block';
@@ -205,7 +198,6 @@ map.on('load', async () => {
       selectedTime.textContent = formatTime(timeFilter);
       anyTimeLabel.style.display = 'none';
     }
-
     updateScatterPlot(timeFilter);
   }
 
